@@ -5,7 +5,12 @@ const Database = require('better-sqlite3');
 const bcrypt   = require('bcryptjs');
 const path     = require('path');
 
-const db = new Database(path.join(__dirname, 'fleet.db'));
+// Sur Render : utiliser /var/data pour la persistance (disque monté)
+// En local : utiliser le dossier backend/
+const DB_PATH = process.env.DATABASE_PATH ||
+  (process.env.RENDER ? '/var/data/fleet.db' : path.join(__dirname, 'fleet.db'));
+
+const db = new Database(DB_PATH);
 
 // Performance pragmas
 db.pragma('journal_mode = WAL');

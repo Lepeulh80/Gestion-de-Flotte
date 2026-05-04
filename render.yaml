@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: gestion-de-flotte
+    runtime: node
+    region: frankfurt  # Europe — plus proche de l'Afrique de l'Ouest
+    plan: free         # Gratuit (se met en veille après 15min d'inactivité)
+    rootDir: .
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/stats
+
+    # Variables d'environnement
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000        # Render utilise le port 10000 par défaut
+      - key: JWT_SECRET
+        generateValue: true  # Render génère automatiquement une valeur aléatoire
+      - key: JWT_EXPIRES
+        value: 8h
+      - key: RENDER
+        value: true
+      - key: ALLOWED_ORIGINS
+        value: https://gestion-de-flotte.onrender.com
+
+    # Disque persistant pour SQLite (nécessite plan payant sur Render)
+    # Si plan gratuit : les données sont perdues à chaque redémarrage
+    # Solution : utiliser le seed automatique dans db.js
+    disk:
+      name: fleet-db
+      mountPath: /var/data
+      sizeGB: 1

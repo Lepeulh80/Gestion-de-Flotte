@@ -2,7 +2,7 @@
 // API.JS - HTTP client + Auth state
 // ============================================================
 
-// URL dynamique : même domaine en production, localhost en dev
+// URL dynamique : même domaine en production (Render/Hostinger), localhost en dev
 const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? `http://${window.location.hostname}:3001/api`
   : `${window.location.protocol}//${window.location.host}/api`;
