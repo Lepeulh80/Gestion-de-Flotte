@@ -1,0 +1,264 @@
+================================================================================
+                    🚀 HOSTINGER - DÉMARRAGE RAPIDE
+================================================================================
+
+OBJECTIF: Héberger Fleet Manager sur Hostinger pour accès partout
+
+================================================================================
+                         ÉTAPES PRINCIPALES
+================================================================================
+
+1️⃣  ACHETER SUR HOSTINGER
+    • Domaine: fleetmanager-ncmali.com (~1€/mois)
+    • VPS Débutant: Ubuntu 22.04 LTS (~3€/mois)
+    • Total: ~4€/mois
+
+2️⃣  CONFIGURER LE VPS
+    • SSH: ssh root@votre-ip
+    • Node.js: curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+    • npm install -g pm2
+
+3️⃣  DÉPLOYER L'APPLICATION
+    • git clone https://github.com/votre-repo/fleet-manager.git
+    • cd fleet-manager/backend
+    • npm install
+    • Configurer .env
+
+4️⃣  CONFIGURER HTTPS
+    • sudo apt install certbot python3-certbot-nginx
+    • sudo certbot certonly --standalone -d votre-domaine.com
+
+5️⃣  CONFIGURER NGINX
+    • sudo apt install nginx
+    • Créer config reverse proxy
+    • sudo systemctl restart nginx
+
+6️⃣  DÉMARRER L'APPLICATION
+    • pm2 start server.js --name "fleet-manager"
+    • pm2 startup
+    • pm2 save
+
+7️⃣  TESTER
+    • https://votre-domaine.com
+    • Email: admin@ncmali.com
+    • Mot de passe: admin123
+
+================================================================================
+                         COMMANDES ESSENTIELLES
+================================================================================
+
+CONNEXION SSH:
+  ssh root@192.168.1.100
+
+INSTALLER NODE.JS:
+  curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+  apt install -y nodejs
+
+CLONER LE PROJET:
+  git clone https://github.com/votre-repo/fleet-manager.git
+  cd fleet-manager/backend
+
+INSTALLER LES DÉPENDANCES:
+  npm install
+
+CONFIGURER L'ENVIRONNEMENT:
+  cp .env.example .env
+  nano .env
+  # Éditer: NODE_ENV=production, JWT_SECRET, ALLOWED_ORIGINS
+
+GÉNÉRER JWT_SECRET:
+  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+INSTALLER PM2:
+  sudo npm install -g pm2
+
+DÉMARRER L'APPLICATION:
+  pm2 start server.js --name "fleet-manager"
+  pm2 startup
+  pm2 save
+
+VOIR LES LOGS:
+  pm2 logs fleet-manager
+
+REDÉMARRER:
+  pm2 restart fleet-manager
+
+INSTALLER NGINX:
+  sudo apt install -y nginx
+
+INSTALLER CERTBOT:
+  sudo apt install -y certbot python3-certbot-nginx
+
+GÉNÉRER CERTIFICAT SSL:
+  sudo certbot certonly --standalone -d votre-domaine.com
+
+CONFIGURER FIREWALL:
+  sudo ufw enable
+  sudo ufw allow 22/tcp
+  sudo ufw allow 80/tcp
+  sudo ufw allow 443/tcp
+
+================================================================================
+                         FICHIER .env PRODUCTION
+================================================================================
+
+NODE_ENV=production
+PORT=3001
+JWT_SECRET=<clé_générée_avec_node>
+JWT_EXPIRES=8h
+ALLOWED_ORIGINS=https://votre-domaine.com
+
+================================================================================
+                    CONFIGURATION NGINX (reverse proxy)
+================================================================================
+
+Fichier: /etc/nginx/sites-available/fleet-manager
+
+server {
+    listen 80;
+    server_name votre-domaine.com www.votre-domaine.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name votre-domaine.com www.votre-domaine.com;
+
+    ssl_certificate /etc/letsencrypt/live/votre-domaine.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/votre-domaine.com/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    client_max_body_size 10M;
+
+    location / {
+        proxy_pass http://localhost:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    gzip on;
+    gzip_types text/plain text/css text/javascript application/json;
+}
+
+Activer:
+  sudo ln -s /etc/nginx/sites-available/fleet-manager /etc/nginx/sites-enabled/
+  sudo nginx -t
+  sudo systemctl restart nginx
+
+================================================================================
+                         VÉRIFICATION
+================================================================================
+
+✅ Application accessible:
+   https://votre-domaine.com
+
+✅ HTTPS fonctionne:
+   curl -I https://votre-domaine.com
+   (Doit retourner HTTP/2 200)
+
+✅ Application démarre:
+   pm2 status
+   (Doit montrer "online")
+
+✅ Logs sans erreurs:
+   pm2 logs fleet-manager
+   (Doit montrer "API démarré sur...")
+
+✅ Login fonctionne:
+   Email: admin@ncmali.com
+   Mot de passe: admin123
+
+================================================================================
+                         TROUBLESHOOTING
+================================================================================
+
+❌ Application ne démarre pas:
+   pm2 logs fleet-manager
+   pm2 restart fleet-manager
+
+❌ Erreur CORS:
+   Vérifier ALLOWED_ORIGINS dans .env
+   Redémarrer: pm2 restart fleet-manager
+
+❌ Erreur SSL:
+   sudo certbot renew --force-renewal
+   sudo systemctl restart nginx
+
+❌ Port 3001 déjà utilisé:
+   sudo lsof -i :3001
+   kill -9 <PID>
+
+❌ Nginx ne démarre pas:
+   sudo nginx -t
+   sudo systemctl restart nginx
+
+================================================================================
+                         COÛTS ESTIMÉS
+================================================================================
+
+Domaine:           ~1€/mois
+VPS Débutant:      ~3€/mois
+SSL (Let's Encrypt): GRATUIT
+Total:             ~4€/mois
+
+================================================================================
+                         SÉCURITÉ
+================================================================================
+
+✅ Changer les mots de passe par défaut
+✅ Configurer HTTPS (Let's Encrypt)
+✅ Activer le firewall (UFW)
+✅ Mettre à jour régulièrement
+✅ Faire des backups réguliers
+✅ Monitorer les logs
+
+================================================================================
+                         PERFORMANCE
+================================================================================
+
+✅ Nginx comme reverse proxy
+✅ Compression gzip activée
+✅ PM2 pour la gestion des processus
+✅ Cache HTTP configuré
+✅ SSL/TLS 1.2+ activé
+
+================================================================================
+                         SUPPORT
+================================================================================
+
+Hostinger Support:
+  • Chat: 24/7 sur hostinger.com
+  • Email: support@hostinger.com
+  • Docs: https://support.hostinger.com
+
+Documentation:
+  • HOSTINGER_GUIDE.md (guide complet)
+  • README.md (documentation générale)
+
+================================================================================
+                         RÉSUMÉ
+================================================================================
+
+1. Acheter domaine + VPS Hostinger (~4€/mois)
+2. Configurer VPS (Node.js, Git, PM2)
+3. Déployer application (git clone, npm install)
+4. Configurer HTTPS (Let's Encrypt)
+5. Configurer Nginx (reverse proxy)
+6. Démarrer avec PM2
+7. Tester et monitorer
+
+Résultat: Application accessible partout sur https://votre-domaine.com
+
+================================================================================
+
+Créé le 8 avril 2026
+Guide complet: HOSTINGER_GUIDE.md
