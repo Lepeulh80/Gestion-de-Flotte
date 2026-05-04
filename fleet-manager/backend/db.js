@@ -5,10 +5,30 @@ const Database = require('better-sqlite3');
 const bcrypt   = require('bcryptjs');
 const path     = require('path');
 
-// Sur Render : utiliser /var/data pour la persistance (disque monté)
-// En local : utiliser le dossier backend/
-const DB_PATH = process.env.DATABASE_PATH ||
-  (process.env.RENDER ? '/var/data/fleet.db' : path.join(__dirname, 'fleet.db'));
+// Chemin de la base de données
+// Priorité : DATABASE_PATH env > /var/data (Render disque) > /tmp (Render gratuit) > local
+const fs = require('fs');
+
+function getDbPath() {
+  if (process.env.DATABASE_PATH) return process.env.DATABASE_PATH;
+
+  if (process.env.RENDER) {
+    // Essayer /var/data (plan payant avec disque persistant)
+    try {
+      if (!fs.existsSync('/var/data')) fs.mkdirSync('/var/data', { recursive: true });
+      return '/var/data/fleet.db';
+    } catch (e) {
+      // Plan gratuit : /var/data inaccessible → utiliser /tmp (données perdues au redémarrage)
+      console.warn('⚠️  /var/data inaccessible, utilisation de /tmp (données non persistantes)');
+      return '/tmp/fleet.db';
+    }
+  }
+
+  return path.join(__dirname, 'fleet.db');
+}
+
+const DB_PATH = getDbPath();
+console.log('📂 Base de données:', DB_PATH);
 
 const db = new Database(DB_PATH);
 
