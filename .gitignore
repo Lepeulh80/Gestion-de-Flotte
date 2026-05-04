@@ -1,0 +1,28 @@
+# Dépendances Node.js
+node_modules/
+
+# Variables d'environnement (SECRETS — ne jamais committer)
+.env
+fleet-manager/backend/.env
+
+# Base de données SQLite (données locales)
+fleet-manager/backend/fleet.db
+fleet-manager/backend/fleet.db-shm
+fleet-manager/backend/fleet.db-wal
+
+# Fichiers de sauvegarde
+fleet-manager/backend/server.js.backup
+fleet-manager/backend/check.js
+fleet-manager/test.html
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/

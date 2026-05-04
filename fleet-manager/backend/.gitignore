@@ -1,0 +1,5 @@
+node_modules/
+.env
+fleet.db-shm
+fleet.db-wal
+*.log
