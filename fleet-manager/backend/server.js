@@ -42,15 +42,23 @@ if (process.env.NODE_ENV === 'production') {
   app.use(helmet.hsts({ maxAge: 31536000, includeSubDomains: true }));
 }
 
-// ---- CORS : restreint en production ----
+// ---- CORS ----
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : ['http://localhost:3001', 'http://127.0.0.1:3001'];
+  : [];
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Autoriser les requêtes sans origin (même domaine, Postman, curl)
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    // Pas d'origin = même domaine (frontend servi par Express) → toujours OK
+    if (!origin) return cb(null, true);
+    // Render : accepter *.onrender.com
+    if (origin.endsWith('.onrender.com')) return cb(null, true);
+    // Localhost dev
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) return cb(null, true);
+    // Origins explicitement autorisées
+    if (allowedOrigins.length && allowedOrigins.includes(origin)) return cb(null, true);
+    // En développement : tout accepter
+    if (process.env.NODE_ENV !== 'production') return cb(null, true);
     cb(new Error('CORS non autorisé'));
   },
   credentials: true,
@@ -98,21 +106,22 @@ app.use(express.static(path.join(__dirname, '..'), {
 // POST /api/auth/login
 app.post('/api/auth/login', (req, res) => {
   try {
-    const email    = sanitizeStr(req.body.email).toLowerCase();
+    const email    = sanitizeStr(req.body.email || '').toLowerCase();
     const password = req.body.password;
     if (!email || !password) return res.status(400).json({ error: 'Email et mot de passe requis' });
     if (!isValidEmail(email)) return res.status(400).json({ error: 'Email invalide' });
 
     const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-    if (!user || !bcrypt.compareSync(password, user.password)) {
-      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
-    }
+    if (!user) return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+
+    const match = bcrypt.compareSync(password, user.password);
+    if (!match) return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
 
     const token = signToken({ id: user.id, nom: user.nom, email: user.email, role: user.role });
     res.json({ token, user: { id: user.id, nom: user.nom, email: user.email, role: user.role } });
   } catch (e) {
-    console.error('Login error:', e);
-    res.status(500).json({ error: 'Erreur lors de la connexion' });
+    console.error('Login error:', e.message, e.stack);
+    res.status(500).json({ error: 'Erreur lors de la connexion: ' + e.message });
   }
 });
 
