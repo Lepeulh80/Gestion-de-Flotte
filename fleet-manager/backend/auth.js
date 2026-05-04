@@ -1,18 +1,23 @@
 // ============================================================
 // AUTH.JS - JWT middleware + role guard
 // ============================================================
-const jwt = require('jsonwebtoken');
+const jwt    = require('jsonwebtoken');
 const crypto = require('crypto');
 
-// ⚠️ SÉCURITÉ: JWT_SECRET DOIT être défini en variable d'environnement en production
-// Générer une clé aléatoire si non définie (développement uniquement)
-const JWT_SECRET  = process.env.JWT_SECRET || (() => {
+// JWT_SECRET : obligatoire en prod, généré aléatoirement en dev
+// Sur Render : définir JWT_SECRET dans Environment Variables
+let JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  // Jamais bloquer le démarrage — générer une clé temporaire
+  JWT_SECRET = crypto.randomBytes(32).toString('hex');
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('❌ JWT_SECRET doit être défini en variable d\'environnement en production');
+    console.warn('⚠️  JWT_SECRET non défini en production ! Définissez-le dans les variables d\'environnement Render.');
+    console.warn('   Les sessions seront invalidées à chaque redémarrage du serveur.');
+  } else {
+    console.warn('⚠️  JWT_SECRET non défini, clé aléatoire générée (développement uniquement)');
   }
-  console.warn('⚠️  JWT_SECRET non défini, génération d\'une clé aléatoire (développement uniquement)');
-  return crypto.randomBytes(32).toString('hex');
-})();
+}
 
 const JWT_EXPIRES = process.env.JWT_EXPIRES || '8h';
 

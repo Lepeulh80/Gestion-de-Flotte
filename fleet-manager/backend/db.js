@@ -33,7 +33,12 @@ console.log('📂 Base de données:', DB_PATH);
 const db = new Database(DB_PATH);
 
 // Performance pragmas
-db.pragma('journal_mode = WAL');
+// WAL mode non supporté sur certains filesystems (/tmp) — on l'active seulement si possible
+try {
+  db.pragma('journal_mode = WAL');
+} catch(e) {
+  console.warn('WAL mode non disponible, utilisation du mode par défaut');
+}
 db.pragma('foreign_keys = ON');
 
 // ---- Schema ----
